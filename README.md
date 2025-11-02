@@ -1,2 +1,3 @@
 # DevHabit
-Pragmatic RESTs API Milan Course
+
+A developer habit tracking system, built with a pragmatic RESTful API.
