@@ -15,7 +15,6 @@ public sealed class Habit
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
     public DateTime? LastCompletedAtUtc { get; set; }
-
 }
 
 public enum HabitType
