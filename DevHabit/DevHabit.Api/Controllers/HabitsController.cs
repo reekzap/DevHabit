@@ -1,5 +1,6 @@
 ﻿using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Habits;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,34 +21,7 @@ public sealed class HabitsController : ControllerBase
     public async Task<ActionResult<HabitDto>> GetHabits()
     {
         var habits = await _context.Habits
-            .Select(h => new HabitDto
-            {
-                Id = h.Id,
-                Name = h.Name,
-                Description = h.Description,
-                Type = h.Type,
-                Frequency = new FrequencyDto
-                {
-                    Type = h.Frequency.Type,
-                    TimePerPeriod = h.Frequency.TimePerPeriod
-                },
-                Target = new TargetDto
-                {
-                    Value = h.Target.Value,
-                    Unit = h.Target.Unit
-                },
-                Status = h.Status,
-                IsArchived = h.IsArchived,
-                EndDate = h.EndDate,
-                MileStone = h.MileStone != null ? new MileStoneDto
-                {
-                    Target = h.MileStone.Target,
-                    Current = h.MileStone.Current
-                } : null,
-                CreatedAtUtc = h.CreatedAtUtc,
-                UpdatedAtUtc = h.UpdatedAtUtc,
-                LastCompletedAtUtc = h.LastCompletedAtUtc
-            })
+            .Select(h => h.ToDto())
             .ToListAsync();
 
         var habitsCollectionDto = new HabitsCollectionDto
@@ -63,34 +37,7 @@ public sealed class HabitsController : ControllerBase
     {
         var habit = await _context.Habits
             .Where(h => h.Id == id)
-            .Select(h => new HabitDto
-            {
-                Id = h.Id,
-                Name = h.Name,
-                Description = h.Description,
-                Type = h.Type,
-                Frequency = new FrequencyDto
-                {
-                    Type = h.Frequency.Type,
-                    TimePerPeriod = h.Frequency.TimePerPeriod
-                },
-                Target = new TargetDto
-                {
-                    Value = h.Target.Value,
-                    Unit = h.Target.Unit
-                },
-                Status = h.Status,
-                IsArchived = h.IsArchived,
-                EndDate = h.EndDate,
-                MileStone = h.MileStone != null ? new MileStoneDto
-                {
-                    Target = h.MileStone.Target,
-                    Current = h.MileStone.Current
-                } : null,
-                CreatedAtUtc = h.CreatedAtUtc,
-                UpdatedAtUtc = h.UpdatedAtUtc,
-                LastCompletedAtUtc = h.LastCompletedAtUtc
-            })
+            .Select(h => h.ToDto())
             .FirstOrDefaultAsync();
 
         if (habit is null)
@@ -99,5 +46,81 @@ public sealed class HabitsController : ControllerBase
         }
 
         return Ok(habit);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto)
+    {
+        var habit = createHabitDto.ToEntity();
+
+        _context.Habits.Add(habit);
+
+        await _context.SaveChangesAsync();
+
+        var habitDto = habit.ToDto();
+
+        return CreatedAtAction(nameof(GetHabit), new { id = habitDto.Id }, habitDto);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateHabit(string id, UpdateHabitDto updateHabitDto)
+    {
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+
+        if (habit is null)
+        {
+            return NotFound();
+        }
+
+        habit.UpdateFromDto(updateHabitDto);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPatch("{id}")]
+    public async Task<ActionResult> PatchHabit(string id, JsonPatchDocument<HabitDto> patchDocument)
+    {
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+
+        if (habit is null)
+        {
+            return NotFound();
+        }
+
+        var habitDto = habit.ToDto();
+
+        patchDocument.ApplyTo(habitDto, ModelState);
+
+        if (!TryValidateModel(habitDto))
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        habit.Name = habitDto.Name;
+        habit.Description = habitDto.Description;
+        habit.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteHabit(string id)
+    {
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+
+        if (habit is null)
+        {
+            return NotFound();
+        }
+
+        _context.Habits.Remove(habit);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

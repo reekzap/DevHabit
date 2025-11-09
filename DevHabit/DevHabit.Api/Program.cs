@@ -8,12 +8,14 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
-}).AddXmlDataContractSerializerFormatters();
+})
+    .AddNewtonsoftJson()
+    .AddXmlDataContractSerializerFormatters();
 
 builder.Services.AddOpenApi();
 
@@ -42,7 +44,7 @@ builder.Logging.AddOpenTelemetry(options =>
     options.IncludeFormattedMessage = true;
 });
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {

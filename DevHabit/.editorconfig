@@ -355,13 +355,13 @@ dotnet_diagnostic.CA5394.severity = none
 dotnet_diagnostic.CA5401.severity = none
 
 # CS8600: Converting null literal or possible null value to non-nullable type.
-dotnet_diagnostic.CS8600.severity = none
+dotnet_diagnostic.CS8600.severity = error
 
 # CS8603: Possible null reference return.
-dotnet_diagnostic.CS8603.severity = none
+dotnet_diagnostic.CS8603.severity = error
 
 # CS8618: Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-dotnet_diagnostic.CS8618.severity = none
+dotnet_diagnostic.CS8618.severity = error
 
 # IDE Code Analyzers rules
 
@@ -423,3 +423,5 @@ dotnet_diagnostic.S6605.severity = none
 
 # S6781: JWT secret keys should not be disclosed
 dotnet_diagnostic.S6781.severity = none
+
+dotnet_diagnostic.S6964.severity = none

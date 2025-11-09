@@ -4,12 +4,12 @@ namespace DevHabit.Api.Dtos.Habits;
 
 public sealed record HabitsCollectionDto
 {
-    public List<HabitDto> Data { get; init; }
+    public List<HabitDto> Data { get; init; } = [];
 }
 
 public sealed record HabitDto
 {
-    public string Id { get; init; }
+    public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public HabitType Type { get; init; }
@@ -33,7 +33,7 @@ public sealed record FrequencyDto
 public sealed record TargetDto
 {
     public int Value { get; init; }
-    public string Unit { get; init; }
+    public string Unit { get; init; } = string.Empty;
 }
 
 public sealed record MileStoneDto

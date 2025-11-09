@@ -2,12 +2,12 @@
 
 public sealed class Habit
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public HabitType Type { get; set; }
-    public Frequency Frequency { get; set; }
-    public Target Target { get; set; }
+    public Frequency Frequency { get; set; } = null!;
+    public Target Target { get; set; } = null!;
     public HabitStatus Status { get; set; }
     public bool IsArchived { get; set; }
     public DateOnly? EndDate { get; set; }
@@ -48,7 +48,7 @@ public enum FrequencyTpe
 public sealed class Target
 {
     public int Value { get; set; }
-    public string Unit { get; set; }
+    public string Unit { get; set; } = string.Empty;
 }
 
 public sealed class MileStone
