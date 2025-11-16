@@ -62,7 +62,10 @@ public static class HabitMapper
             } : null,
             CreatedAtUtc = habit.CreatedAtUtc,
             UpdatedAtUtc = habit.UpdatedAtUtc,
-            LastCompletedAtUtc = habit.LastCompletedAtUtc
+            LastCompletedAtUtc = habit.LastCompletedAtUtc,
+            Tags = habit.Tags
+                .Select(t => t.Name)
+                .ToList()
         };
     }
 

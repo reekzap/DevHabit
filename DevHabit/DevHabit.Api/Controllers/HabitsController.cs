@@ -21,6 +21,7 @@ public sealed class HabitsController : ControllerBase
     public async Task<ActionResult<HabitDto>> GetHabits()
     {
         var habits = await _context.Habits
+            .Include(h => h.Tags)
             .Select(h => h.ToDto())
             .ToListAsync();
 
