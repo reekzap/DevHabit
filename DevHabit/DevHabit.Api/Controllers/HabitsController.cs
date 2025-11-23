@@ -3,6 +3,8 @@ using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Common;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
+using DevHabit.Api.Entities;
+using DevHabit.Api.Services.Sorting;
 using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -22,8 +24,18 @@ public sealed class HabitsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PaginationResult<HabitDto>>> GetHabits([FromQuery] HabitsQueryParameters query)
+    public async Task<ActionResult<PaginationResult<HabitDto>>> GetHabits([FromQuery] HabitsQueryParameters query,
+        SortMappingProvider sortMappingProvider)
     {
+        if (!sortMappingProvider.ValidateMappings<HabitDto, Habit>(query.Sort))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided sort parameter isn't valid: '{query.Sort}'");
+        }
+
+        var sortMappings = sortMappingProvider.GetMappings<HabitDto, Habit>();
+
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         var habitsQuery = _context.Habits
             .Where(h => query.Search == null ||
@@ -31,6 +43,7 @@ public sealed class HabitsController : ControllerBase
                         h.Description != null && h.Description.ToLower().Contains(query.Search.ToLower()))
             .Where(h => query.Type == null || h.Type.Equals(query.Type))
             .Where(h => query.Status == null || h.Status.Equals(query.Status))
+            .ApplySort(query.Sort, sortMappings)
             .Include(h => h.Tags)
             .Select(h => h.ToDto())
             .AsQueryable();
