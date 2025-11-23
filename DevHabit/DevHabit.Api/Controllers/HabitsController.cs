@@ -1,6 +1,8 @@
-﻿using DevHabit.Api.Database;
+﻿using System.Linq.Expressions;
+using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
+using DevHabit.Api.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -22,27 +24,13 @@ public sealed class HabitsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<HabitDto>> GetHabits([FromQuery] HabitsQueryParameters query)
     {
-        //var query = _context.Habits.AsQueryable();
-
-        //        if (!string.IsNullOrWhiteSpace(search))
-        //        {
-        //            search = search.Trim().ToLower();
-        //#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-        //            query = query
-        //                .Where(h => h.Name.ToLower().Contains(search)
-        //                || h.Description != null && h.Description.ToLower().Contains(search));
-        //#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-        //        }
-
-        //        if (type is not null)
-        //        {
-        //            query = query.Where(h => h.Type.Equals(type));
-        //        }
-
-        //        if (status is not null)
-        //        {
-        //            query = query.Where(h => h.Status.Equals(status));
-        //        }
+        Expression<Func<Habit, object>> orderBy = query.Sort switch
+        {
+            "name" => h => h.Name,
+            "description" => h => h.Description ?? string.Empty,
+            "type" => h => h.Type,
+            _ => h => h.Name
+        };
 
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         var habits = await _context.Habits
@@ -51,6 +39,7 @@ public sealed class HabitsController : ControllerBase
                         h.Description != null && h.Description.ToLower().Contains(query.Search.ToLower()))
             .Where(h => query.Type == null || h.Type.Equals(query.Type))
             .Where(h => query.Status == null || h.Status.Equals(query.Status))
+            .OrderBy(orderBy)
             .Include(h => h.Tags)
             .Select(h => h.ToDto())
             .ToListAsync();
