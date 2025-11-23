@@ -4,7 +4,6 @@ using DevHabit.Api.Dtos.Tags;
 using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevHabit.Api.Controllers;
@@ -53,20 +52,22 @@ public sealed class HabitsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto, IValidator<CreateHabitDto> validator, ProblemDetailsFactory problemDetailsFactory)
+    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto, IValidator<CreateHabitDto> validator)
     {
-        var validationResult = await validator.ValidateAsync(createHabitDto);
+        await validator.ValidateAndThrowAsync(createHabitDto);
 
-        if (!validationResult.IsValid)
-        {
-            var problem = problemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                StatusCodes.Status400BadRequest);
+        //var validationResult = await validator.ValidateAsync(createHabitDto);
 
-            problem.Extensions.Add("errors", validationResult.ToDictionary());
+        //if (!validationResult.IsValid)
+        //{
+        //    var problem = problemDetailsFactory.CreateProblemDetails(
+        //        HttpContext,
+        //        StatusCodes.Status400BadRequest);
 
-            return BadRequest(problem);
-        }
+        //    problem.Extensions.Add("errors", validationResult.ToDictionary());
+
+        //    return BadRequest(problem);
+        //}
 
         var habit = createHabitDto.ToEntity();
 
