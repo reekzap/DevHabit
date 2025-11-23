@@ -49,7 +49,10 @@ public sealed class HabitsController : ControllerBase
             .AsQueryable();
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
-        var paginationResult = await PaginationResult<HabitDto>.CreateAsync(habitsQuery, query.Page, query.PageSize);
+        var paginationResult = await PaginationResult<HabitDto>.CreateAsync(
+            habitsQuery,
+            query.Page,
+            query.PageSize);
 
         return Ok(paginationResult);
     }
