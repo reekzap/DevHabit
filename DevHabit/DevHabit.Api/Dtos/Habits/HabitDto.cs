@@ -2,11 +2,6 @@
 
 namespace DevHabit.Api.Dtos.Habits;
 
-public sealed record HabitsCollectionDto
-{
-    public List<HabitDto> Data { get; init; } = [];
-}
-
 public sealed record HabitDto
 {
     public string Id { get; init; } = string.Empty;
