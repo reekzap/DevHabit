@@ -20,12 +20,41 @@ public sealed class HabitsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<HabitDto>> GetHabits()
+    public async Task<ActionResult<HabitDto>> GetHabits([FromQuery] HabitsQueryParameters query)
     {
+        //var query = _context.Habits.AsQueryable();
+
+        //        if (!string.IsNullOrWhiteSpace(search))
+        //        {
+        //            search = search.Trim().ToLower();
+        //#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+        //            query = query
+        //                .Where(h => h.Name.ToLower().Contains(search)
+        //                || h.Description != null && h.Description.ToLower().Contains(search));
+        //#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+        //        }
+
+        //        if (type is not null)
+        //        {
+        //            query = query.Where(h => h.Type.Equals(type));
+        //        }
+
+        //        if (status is not null)
+        //        {
+        //            query = query.Where(h => h.Status.Equals(status));
+        //        }
+
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         var habits = await _context.Habits
+            .Where(h => query.Search == null ||
+                        h.Name.ToLower().Contains(query.Search.ToLower()) ||
+                        h.Description != null && h.Description.ToLower().Contains(query.Search.ToLower()))
+            .Where(h => query.Type == null || h.Type.Equals(query.Type))
+            .Where(h => query.Status == null || h.Status.Equals(query.Status))
             .Include(h => h.Tags)
             .Select(h => h.ToDto())
             .ToListAsync();
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
         var habitsCollectionDto = new HabitsCollectionDto
         {
