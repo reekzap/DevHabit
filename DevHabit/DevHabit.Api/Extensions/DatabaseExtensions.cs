@@ -7,13 +7,17 @@ public static class DatabaseExtensions
 {
     public static async Task ApplyMigrationsAsync(this WebApplication app)
     {
-        using IServiceScope scope = app.Services.CreateScope();
-        await using ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        using var scope = app.Services.CreateScope();
+        await using var applicationDbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await using var applicationIdentityDbContext = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
 
         try
         {
-            await dbContext.Database.MigrateAsync();
-            app.Logger.LogInformation("Database migrations applied successfully.");
+            await applicationDbContext.Database.MigrateAsync();
+            app.Logger.LogInformation("Application database migrations applied successfully.");
+
+            await applicationIdentityDbContext.Database.MigrateAsync();
+            app.Logger.LogInformation("Application identity database migrations applied successfully.");
         }
         catch (Exception ex)
         {

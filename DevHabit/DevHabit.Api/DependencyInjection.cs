@@ -4,6 +4,7 @@ using DevHabit.Api.Entities;
 using DevHabit.Api.Middleware;
 using DevHabit.Api.Services.Sorting;
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
@@ -55,6 +56,13 @@ public static class DependencyInjection
                 npgsqlOptions => npgsqlOptions
                     .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Application)));
 
+        builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
+            options
+                .UseNpgsql(
+                builder.Configuration.GetConnectionString("Database"),
+                npgsqlOptions => npgsqlOptions
+                    .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Identity)));
+
         return builder;
     }
 
@@ -88,6 +96,15 @@ public static class DependencyInjection
         builder.Services.AddTransient<SortMappingProvider>();
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ =>
             HabitMapper.SortMapping);
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddAuthenticationServices(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddIdentity<IdentityUser, IdentityRole>()
+            .AddEntityFrameworkStores<ApplicationIdentityDbContext>();
 
         return builder;
     }
