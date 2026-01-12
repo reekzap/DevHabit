@@ -2,11 +2,15 @@
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Middleware;
+using DevHabit.Api.Services;
 using DevHabit.Api.Services.Sorting;
+using DevHabit.Api.Settings;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -97,6 +101,8 @@ public static class DependencyInjection
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ =>
             HabitMapper.SortMapping);
 
+        builder.Services.AddTransient<TokenProvider>();
+
         return builder;
     }
 
@@ -105,6 +111,28 @@ public static class DependencyInjection
         builder.Services
             .AddIdentity<IdentityUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationIdentityDbContext>();
+
+        builder.Services.Configure<JwtAuthSettings>(builder.Configuration.GetSection(nameof(JwtAuthSettings)));
+
+        var jwtAuthOptions = builder.Configuration.GetSection(nameof(JwtAuthSettings)).Get<JwtAuthSettings>()!;
+
+        builder.Services
+             .AddAuthentication(options =>
+             {
+                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+             })
+             .AddJwtBearer(options =>
+             {
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     ValidIssuer = jwtAuthOptions.Issuer,
+                     ValidAudience = jwtAuthOptions.Audience,
+                     IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtAuthOptions.Key)),
+                 };
+             });
+
+        builder.Services.AddAuthorization();
 
         return builder;
     }

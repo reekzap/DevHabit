@@ -2,12 +2,14 @@
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevHabit.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class TagsController(ApplicationDbContext dbContext) : ControllerBase
