@@ -1,12 +1,15 @@
 ﻿using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Auth;
 using DevHabit.Api.Dtos.Users;
+using DevHabit.Api.Entities;
 using DevHabit.Api.Services;
+using DevHabit.Api.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Options;
 
 namespace DevHabit.Api.Controllers;
 
@@ -19,14 +22,16 @@ public sealed class AuthController : ControllerBase
     private readonly ApplicationIdentityDbContext _identityDbContext;
     private readonly ApplicationDbContext _applicationDbContext;
     private readonly TokenProvider _tokenProvider;
+    private readonly JwtAuthSettings _jwtAuthSettings;
 
     public AuthController(UserManager<IdentityUser> userManager, ApplicationIdentityDbContext identityDbContext,
-        ApplicationDbContext applicationDbContext, TokenProvider tokenProvider)
+        ApplicationDbContext applicationDbContext, TokenProvider tokenProvider, IOptions<JwtAuthSettings> jwtAuthSettings)
     {
         _userManager = userManager;
         _identityDbContext = identityDbContext;
         _applicationDbContext = applicationDbContext;
         _tokenProvider = tokenProvider;
+        _jwtAuthSettings = jwtAuthSettings.Value;
     }
 
     [HttpPost("register")]
@@ -68,11 +73,23 @@ public sealed class AuthController : ControllerBase
         _applicationDbContext.Users.Add(user);
         await _applicationDbContext.SaveChangesAsync();
 
-        // Note: Commit the transaction to both Identity and Application databases.
-        await transaction.CommitAsync();
-
         var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email);
         var accessTokens = _tokenProvider.Create(tokenRequest);
+
+        var refreshToken = new RefreshToken
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = identityUser.Id,
+            Token = accessTokens.RefreshToken,
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtAuthSettings.RefreshTokenExpirationInDays)
+        };
+
+        _identityDbContext.RefreshTokens.Add(refreshToken);
+
+        await _identityDbContext.SaveChangesAsync();
+
+        // Note: Commit the transaction to both Identity and Application databases.
+        await transaction.CommitAsync();
 
         return Ok(accessTokens);
     }
@@ -95,6 +112,46 @@ public sealed class AuthController : ControllerBase
 
         var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email!);
         var accessTokens = _tokenProvider.Create(tokenRequest);
+
+        var refreshToken = new RefreshToken
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = identityUser.Id,
+            Token = accessTokens.RefreshToken,
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtAuthSettings.RefreshTokenExpirationInDays)
+        };
+
+        _identityDbContext.RefreshTokens.Add(refreshToken);
+
+        await _identityDbContext.SaveChangesAsync();
+
+        return Ok(accessTokens);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenDto refreshTokenDto)
+    {
+        var refreshToken = await _identityDbContext.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.Token == refreshTokenDto.RefreshToken);
+
+        if (refreshToken == null)
+        {
+            return Unauthorized();
+        }
+
+        if (refreshToken.ExpiresAtUtc < DateTime.UtcNow)
+        {
+            return Unauthorized();
+        }
+
+        var tokenRequest = new TokenRequestDto(refreshToken.User.Id, refreshToken.User.Email!);
+        var accessTokens = _tokenProvider.Create(tokenRequest);
+
+        refreshToken.Token = accessTokens.RefreshToken;
+        refreshToken.ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtAuthSettings.RefreshTokenExpirationInDays);
+
+        await _identityDbContext.SaveChangesAsync();
 
         return Ok(accessTokens);
     }

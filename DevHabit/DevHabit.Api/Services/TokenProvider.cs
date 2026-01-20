@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using DevHabit.Api.Dtos.Auth;
 using DevHabit.Api.Settings;
@@ -49,8 +50,10 @@ public sealed class TokenProvider
         return accessToken;
     }
 
-    public string GenerateRefreshToken()
+    public static string GenerateRefreshToken()
     {
-        return string.Empty;
+        var randomBytes = RandomNumberGenerator.GetBytes(32);
+
+        return Convert.ToBase64String(randomBytes);
     }
 }
