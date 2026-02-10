@@ -31,7 +31,7 @@ public sealed class ApplicationIdentityDbContext(DbContextOptions<ApplicationIde
             entity.HasIndex(e => e.Token)
                 .IsUnique();
 
-            entity.HasOne<User>()
+            entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
