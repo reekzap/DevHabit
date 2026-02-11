@@ -4,6 +4,7 @@ using DevHabit.Api.Dtos.Common;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
 using DevHabit.Api.Entities;
+using DevHabit.Api.Services;
 using DevHabit.Api.Services.Sorting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -19,16 +20,24 @@ namespace DevHabit.Api.Controllers;
 public sealed class HabitsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly UserContext _userContext;
 
-    public HabitsController(ApplicationDbContext context)
+    public HabitsController(ApplicationDbContext context, UserContext userContext)
     {
         _context = context;
+        _userContext = userContext;
     }
 
     [HttpGet]
     public async Task<ActionResult<PaginationResult<HabitDto>>> GetHabits([FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider)
     {
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         if (!sortMappingProvider.ValidateMappings<HabitDto, Habit>(query.Sort))
         {
             return Problem(
@@ -40,6 +49,7 @@ public sealed class HabitsController : ControllerBase
 
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         var habitsQuery = _context.Habits
+            .Where(h => h.UserId == userId)
             .Where(h => query.Search == null ||
                         h.Name.ToLower().Contains(query.Search.ToLower()) ||
                         h.Description != null && h.Description.ToLower().Contains(query.Search.ToLower()))
@@ -62,8 +72,15 @@ public sealed class HabitsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<HabitDto>> GetHabit(string id)
     {
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         var habit = await _context.Habits
-            .Where(h => h.Id == id)
+            .Where(h => h.Id == id && h.UserId == userId)
+            .Include(h => h.Tags)
             .Select(h => h.ToDto())
             .FirstOrDefaultAsync();
 
@@ -78,6 +95,12 @@ public sealed class HabitsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto, IValidator<CreateHabitDto> validator)
     {
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         await validator.ValidateAndThrowAsync(createHabitDto);
 
         //var validationResult = await validator.ValidateAsync(createHabitDto);
@@ -93,7 +116,7 @@ public sealed class HabitsController : ControllerBase
         //    return BadRequest(problem);
         //}
 
-        var habit = createHabitDto.ToEntity();
+        var habit = createHabitDto.ToEntity(userId);
 
         _context.Habits.Add(habit);
 
@@ -107,7 +130,13 @@ public sealed class HabitsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateHabit(string id, UpdateHabitDto updateHabitDto)
     {
-        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
         if (habit is null)
         {
@@ -124,7 +153,13 @@ public sealed class HabitsController : ControllerBase
     [HttpPatch("{id}")]
     public async Task<ActionResult> PatchHabit(string id, JsonPatchDocument<HabitDto> patchDocument)
     {
-        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
         if (habit is null)
         {
@@ -152,7 +187,13 @@ public sealed class HabitsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteHabit(string id)
     {
-        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id);
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
         if (habit is null)
         {

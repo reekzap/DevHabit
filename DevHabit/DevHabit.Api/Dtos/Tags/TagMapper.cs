@@ -16,12 +16,13 @@ internal static class TagMapper
         };
     }
 
-    public static Tag ToEntity(this CreateTagDto dto)
+    public static Tag ToEntity(this CreateTagDto dto, string userId)
     {
         return new Tag()
         {
             Id = $"t_{Guid.CreateVersion7()}",
             Name = dto.Name,
+            UserId = userId,
             Description = dto.Description,
             CreatedAtUtc = DateTime.UtcNow
         };

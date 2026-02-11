@@ -1,6 +1,7 @@
 ﻿using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
+using DevHabit.Api.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +13,29 @@ namespace DevHabit.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public sealed class TagsController(ApplicationDbContext dbContext) : ControllerBase
+public sealed class TagsController : ControllerBase
 {
+    private readonly ApplicationDbContext _context;
+    private readonly UserContext _userContext;
+
+    public TagsController(ApplicationDbContext context, UserContext userContext)
+    {
+        _context = context;
+        _userContext = userContext;
+    }
+
+
     [HttpGet]
     public async Task<ActionResult<TagsCollectionDto>> GetTags()
     {
-        var tags = await dbContext.Tags
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var tags = await _context.Tags
+            .Where(c => c.UserId == userId)
             .Select(c => c.ToDto())
             .ToListAsync();
 
@@ -32,8 +50,14 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpGet("{id}")]
     public async Task<ActionResult<TagDto>> GetTag(string id)
     {
-        var tag = await dbContext.Tags
-            .Where(h => h.Id == id)
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var tag = await _context.Tags
+            .Where(c => c.Id == id && c.UserId == userId)
             .Select(c => c.ToDto())
             .FirstOrDefaultAsync();
 
@@ -48,6 +72,12 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpPost]
     public async Task<ActionResult<TagDto>> CreateTag(CreateTagDto createTagDto, IValidator<CreateTagDto> validator, ProblemDetailsFactory problemDetailsFactory)
     {
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         var validationResult = await validator.ValidateAsync(createTagDto);
 
         if (!validationResult.IsValid)
@@ -61,16 +91,16 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
             return BadRequest(problem);
         }
 
-        var tag = createTagDto.ToEntity();
+        var tag = createTagDto.ToEntity(userId);
 
-        if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name))
+        if (await _context.Tags.AnyAsync(t => t.Name == tag.Name))
         {
             return Conflict($"The tag '{tag.Name}' already exists");
         }
 
-        dbContext.Tags.Add(tag);
+        _context.Tags.Add(tag);
 
-        await dbContext.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
         var tagDto = tag.ToDto();
 
@@ -80,7 +110,13 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateTag(string id, UpdateTagDto updateTagDto)
     {
-        var tag = await dbContext.Tags.FirstOrDefaultAsync(h => h.Id == id);
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var tag = await _context.Tags.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (tag is null)
         {
@@ -89,7 +125,7 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
 
         tag.UpdateFromDto(updateTagDto);
 
-        await dbContext.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -97,16 +133,22 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteTag(string id)
     {
-        var tag = await dbContext.Tags.FirstOrDefaultAsync(h => h.Id == id);
+        var userId = await _userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var tag = await _context.Tags.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (tag is null)
         {
             return NotFound();
         }
 
-        dbContext.Tags.Remove(tag);
+        _context.Tags.Remove(tag);
 
-        await dbContext.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }
