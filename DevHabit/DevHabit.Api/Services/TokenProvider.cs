@@ -28,11 +28,13 @@ public sealed class TokenProvider
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
-        {
+        Claim[] claims =
+        [
             new Claim(JwtRegisteredClaimNames.Sub, tokenRequest.UserId),
-            new Claim(JwtRegisteredClaimNames.Email, tokenRequest.Email)
-        };
+            new Claim(JwtRegisteredClaimNames.Email, tokenRequest.Email),
+            ..tokenRequest.Roles.Select(role => new Claim(ClaimTypes.Role, role))
+        ];
+
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

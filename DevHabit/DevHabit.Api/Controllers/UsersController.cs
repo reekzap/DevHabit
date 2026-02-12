@@ -1,5 +1,6 @@
 ﻿using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Users;
+using DevHabit.Api.Entities;
 using DevHabit.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DevHabit.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [Route("api/[controller]")]
 [ApiController]
 public class UsersController : ControllerBase
@@ -22,6 +23,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<UserDto>> GetUserById(string id)
     {
         var userId = await _userContext.GetUserIdAsync();

@@ -49,15 +49,33 @@ public sealed class AuthController : ControllerBase
             UserName = registerUserDto.Email
         };
 
-        var result = await _userManager.CreateAsync(identityUser, registerUserDto.Password);
+        var createUserResult = await _userManager.CreateAsync(identityUser, registerUserDto.Password);
 
-        if (!result.Succeeded)
+        if (!createUserResult.Succeeded)
         {
             var extensions = new Dictionary<string, object?>()
             {
                 {
                     "errors",
-                    result.Errors.ToDictionary(e => e.Code, e => e.Description)
+                    createUserResult.Errors.ToDictionary(e => e.Code, e => e.Description)
+                }
+            };
+
+            return Problem(
+                detail: "Unable to regiter user, please try again.",
+                statusCode: StatusCodes.Status400BadRequest,
+                extensions: extensions);
+        }
+
+        var addToRoleResult = await _userManager.AddToRoleAsync(identityUser, Roles.Member);
+
+        if (!addToRoleResult.Succeeded)
+        {
+            var extensions = new Dictionary<string, object?>()
+            {
+                {
+                    "errors",
+                    addToRoleResult.Errors.ToDictionary(e => e.Code, e => e.Description)
                 }
             };
 
@@ -73,7 +91,7 @@ public sealed class AuthController : ControllerBase
         _applicationDbContext.Users.Add(user);
         await _applicationDbContext.SaveChangesAsync();
 
-        var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email);
+        var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email, [Roles.Member]);
         var accessTokens = _tokenProvider.Create(tokenRequest);
 
         var refreshToken = new RefreshToken
@@ -103,6 +121,7 @@ public sealed class AuthController : ControllerBase
         {
             return Unauthorized();
         }
+
         var passwordValid = await _userManager.CheckPasswordAsync(identityUser, loginUserDto.Password);
 
         if (!passwordValid)
@@ -110,7 +129,9 @@ public sealed class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email!);
+        var roles = await _userManager.GetRolesAsync(identityUser);
+
+        var tokenRequest = new TokenRequestDto(identityUser.Id, identityUser.Email!, roles);
         var accessTokens = _tokenProvider.Create(tokenRequest);
 
         var refreshToken = new RefreshToken
@@ -144,8 +165,9 @@ public sealed class AuthController : ControllerBase
         {
             return Unauthorized();
         }
+        var roles = await _userManager.GetRolesAsync(refreshToken.User);
 
-        var tokenRequest = new TokenRequestDto(refreshToken.User.Id, refreshToken.User.Email!);
+        var tokenRequest = new TokenRequestDto(refreshToken.User.Id, refreshToken.User.Email!, roles);
         var accessTokens = _tokenProvider.Create(tokenRequest);
 
         refreshToken.Token = accessTokens.RefreshToken;
