@@ -1,4 +1,5 @@
-﻿using DevHabit.Api.Database;
+﻿using System.Net.Http.Headers;
+using DevHabit.Api.Database;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Middleware;
@@ -104,6 +105,22 @@ public static class DependencyInjection
         builder.Services.AddTransient<TokenProvider>();
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<UserContext>();
+
+        builder.Services.AddScoped<GitHubAccessTokenService>();
+        builder.Services.AddTransient<GitHubService>();
+        builder.Services
+            .AddHttpClient("github")
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri("https://api.github.com");
+
+                client.DefaultRequestHeaders
+                    .UserAgent.Add(new ProductInfoHeaderValue("DevHabit", "1.0"));
+
+                client.DefaultRequestHeaders
+                    .Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+            });
+
 
         return builder;
     }
