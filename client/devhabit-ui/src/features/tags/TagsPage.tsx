@@ -23,7 +23,7 @@ export const TagsPage: React.FC = () => {
   const loadTags = async () => {
     const result = await getTags();
     if (result) {
-      setTags(result.items);
+      setTags(result.data);
       const link = result.links.find(l => l.rel === 'create');
       setCreateLink(link ?? null);
     }

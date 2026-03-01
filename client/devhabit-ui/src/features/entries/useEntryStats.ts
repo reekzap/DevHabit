@@ -26,7 +26,7 @@ export function useEntryStats() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<EntryStats>(`${API_BASE_URL}/entries/stats`, accessToken, {
+      const result = await fetchWithAuth<EntryStats>(`${API_BASE_URL}/api/entries/stats`, accessToken, {
         headers: {
           Accept: 'application/vnd.dev-habit.hateoas+json',
         },

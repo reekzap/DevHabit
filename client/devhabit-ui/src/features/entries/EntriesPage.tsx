@@ -87,7 +87,7 @@ export const EntriesPage: React.FC = () => {
       sort: 'date desc,createdAtUtc desc',
     });
     if (result) {
-      setEntries(result.items);
+      setEntries(result.data);
       setEntriesResponse(result);
     }
   };

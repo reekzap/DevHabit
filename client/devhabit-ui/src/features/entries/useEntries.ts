@@ -33,7 +33,7 @@ export function useEntries() {
 
     try {
       const result = await fetchWithAuth<EntriesResponse>(
-        `${API_BASE_URL}/entries?page=${page}&pageSize=${pageSize}&sort=${sort}`,
+        `${API_BASE_URL}/api/entries?page=${page}&pageSize=${pageSize}&sort=${sort}`,
         accessToken,
         {
           headers: {
@@ -56,7 +56,7 @@ export function useEntries() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<Entry>(`${API_BASE_URL}/entries/${id}`, accessToken, {
+      const result = await fetchWithAuth<Entry>(`${API_BASE_URL}/api/entries/${id}`, accessToken, {
         headers: {
           Accept: 'application/vnd.dev-habit.hateoas+json',
         },
@@ -76,7 +76,7 @@ export function useEntries() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<Entry>(`${API_BASE_URL}/entries`, accessToken, {
+      const result = await fetchWithAuth<Entry>(`${API_BASE_URL}/api/entries`, accessToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

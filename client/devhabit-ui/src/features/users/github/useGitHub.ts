@@ -20,7 +20,7 @@ export function useGitHub() {
   const submitPAT = async (personalAccessToken: string, expiresInDays: number) => {
     if (!accessToken) throw new Error('Not authenticated');
 
-    await fetchWithAuth(`${API_BASE_URL}/github/personal-access-token`, accessToken, {
+    await fetchWithAuth(`${API_BASE_URL}/api/github/personal-access-token`, accessToken, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export function useGitHub() {
 
     try {
       const response = await fetchWithAuth<GitHubUserProfile>(
-        `${API_BASE_URL}/github/profile`,
+        `${API_BASE_URL}/api/github/profile`,
         accessToken,
         {
           headers: {

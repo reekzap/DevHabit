@@ -26,7 +26,7 @@ export const HabitDetails: React.FC<HabitDetailsProps> = ({ habit, onDelete, onU
   const loadTags = async () => {
     const response = await getTags();
     if (response) {
-      setTags(response.items);
+      setTags(response.data);
     }
   };
 

@@ -19,7 +19,7 @@ export const HabitsPage: React.FC = () => {
   const loadHabits = async () => {
     const result = await listHabits({ pageSize: 6 });
     if (result) {
-      setHabits(result.items);
+      setHabits(result.data);
       setCreateLink(result.links.find(l => l.rel === 'create') || null);
       setNextPageLink(result.links.find(l => l.rel === 'next-page') || null);
       setPrevPageLink(result.links.find(l => l.rel === 'previous-page') || null);
@@ -29,7 +29,7 @@ export const HabitsPage: React.FC = () => {
   const handlePageChange = async (link: HypermediaLink) => {
     const result = await listHabits({ pageSize: 6, url: link.href });
     if (result) {
-      setHabits(result.items);
+      setHabits(result.data);
       setNextPageLink(result.links.find(l => l.rel === 'next-page') || null);
       setPrevPageLink(result.links.find(l => l.rel === 'previous-page') || null);
     }

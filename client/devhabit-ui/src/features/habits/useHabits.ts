@@ -6,7 +6,7 @@ import { fetchWithAuth } from '../../utils/fetchUtils';
 import type { Link } from '../../types/api';
 
 interface HabitsResponse {
-  items: Habit[];
+  data: Habit[];
   links: Link[];
 }
 
@@ -35,7 +35,7 @@ export function useHabits() {
     try {
       const result = await fetchWithAuth<HabitsResponse>(
         url ||
-          `${API_BASE_URL}/habits?pageSize=${pageSize}${fields ? `&fields=${fields}` : ''}${sort ? `&sort=${sort}` : ''}`,
+          `${API_BASE_URL}/api/habits?pageSize=${pageSize}${fields ? `&fields=${fields}` : ''}${sort ? `&sort=${sort}` : ''}`,
         accessToken,
         {
           headers: {
@@ -108,7 +108,7 @@ export function useHabits() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<Habit>(`${API_BASE_URL}/habits`, accessToken, {
+      const result = await fetchWithAuth<Habit>(`${API_BASE_URL}/api/habits`, accessToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

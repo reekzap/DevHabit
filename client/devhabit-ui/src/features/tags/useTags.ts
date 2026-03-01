@@ -12,7 +12,7 @@ export interface Tag {
 }
 
 interface TagsResponse {
-  items: Tag[];
+  data: Tag[];
   links: Link[];
 }
 
@@ -32,7 +32,7 @@ export function useTags() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<TagsResponse>(`${API_BASE_URL}/tags`, accessToken, {
+      const result = await fetchWithAuth<TagsResponse>(`${API_BASE_URL}/api/tags`, accessToken, {
         headers: {
           Accept: 'application/vnd.dev-habit.hateoas+json',
         },
@@ -52,7 +52,7 @@ export function useTags() {
     setError(null);
 
     try {
-      const result = await fetchWithAuth<Tag>(`${API_BASE_URL}/tags`, accessToken, {
+      const result = await fetchWithAuth<Tag>(`${API_BASE_URL}/api/tags`, accessToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

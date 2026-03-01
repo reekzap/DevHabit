@@ -41,7 +41,7 @@ export interface UpdateEntryDto {
 }
 
 export interface EntriesResponse extends HateoasResponse {
-  items: Entry[];
+  data: Entry[];
   page: number;
   pageSize: number;
   totalCount: number;

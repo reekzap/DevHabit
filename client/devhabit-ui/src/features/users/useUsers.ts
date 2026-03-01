@@ -18,7 +18,7 @@ export function useUsers() {
     if (!accessToken) return null;
 
     try {
-      return await fetchWithAuth<UserProfile>(`${API_BASE_URL}/users/me`, accessToken, {
+      return await fetchWithAuth<UserProfile>(`${API_BASE_URL}/api/users/me`, accessToken, {
         headers: {
           Accept: 'application/vnd.dev-habit.hateoas+json',
         },

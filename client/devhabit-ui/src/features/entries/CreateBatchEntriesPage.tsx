@@ -49,12 +49,12 @@ export const CreateBatchEntriesPage: React.FC = () => {
   const loadHabits = async () => {
     const result = await listHabits({ pageSize: 100, sort: 'name', fields: 'id,name' });
     if (result) {
-      setHabits(result.items);
-      if (result.items.length > 0) {
+      setHabits(result.data);
+      if (result.data.length > 0) {
         setBatchEntries(entries =>
           entries.map(entry => ({
             ...entry,
-            habitId: entry.habitId || result.items[0].id,
+            habitId: entry.habitId || result.data[0].id,
           }))
         );
       }

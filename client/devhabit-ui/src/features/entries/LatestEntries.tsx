@@ -18,7 +18,7 @@ export const LatestEntries: React.FC = () => {
       sort: 'date desc,createdAtUtc desc',
     });
     if (result) {
-      setEntries(result.items);
+      setEntries(result.data);
     }
   };
 

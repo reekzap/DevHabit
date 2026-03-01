@@ -17,7 +17,7 @@ export const QuickEntryHabits: React.FC = () => {
   const loadHabits = async () => {
     const result = await listHabits({ pageSize: 8, sort: 'createdAtUtc desc' });
     if (result) {
-      setHabits(result.items);
+      setHabits(result.data);
     }
   };
 
