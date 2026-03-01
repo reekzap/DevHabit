@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using Asp.Versioning;
 using DevHabit.Api.Database;
+using DevHabit.Api.Dtos.Entries;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Jobs;
@@ -150,8 +151,16 @@ public static class DependencyInjection
         builder.Services.AddTransient<SortMappingProvider>();
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ =>
             HabitMapper.SortMapping);
+        builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<EntryDto, Entry>>(_ =>
+            EntryMapper.SortMapping);
+
+        builder.Services.AddTransient<DataShapingService>();
+
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddTransient<LinkService>();
 
         builder.Services.AddTransient<TokenProvider>();
+
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<UserContext>();
 

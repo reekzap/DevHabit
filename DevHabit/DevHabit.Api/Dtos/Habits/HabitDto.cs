@@ -1,8 +1,9 @@
-﻿using DevHabit.Api.Entities;
+﻿using DevHabit.Api.Dtos.Common;
+using DevHabit.Api.Entities;
 
 namespace DevHabit.Api.Dtos.Habits;
 
-public sealed record HabitDto
+public sealed record HabitDto : ILinksResponse
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
@@ -18,6 +19,7 @@ public sealed record HabitDto
     public DateTime? UpdatedAtUtc { get; init; }
     public DateTime? LastCompletedAtUtc { get; init; }
     public List<string> Tags { get; init; } = [];
+    public List<LinkDto> Links { get; set; } = [];
 }
 
 public sealed record FrequencyDto

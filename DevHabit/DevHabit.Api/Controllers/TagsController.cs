@@ -1,33 +1,45 @@
-﻿using DevHabit.Api.Database;
+﻿using System.Net.Mime;
+using DevHabit.Api.Database;
+using DevHabit.Api.Dtos.Common;
 using DevHabit.Api.Dtos.Habits;
 using DevHabit.Api.Dtos.Tags;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Services;
+using DevHabit.Api.Settings;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DevHabit.Api.Controllers;
 
 [Authorize(Roles = Roles.Member)]
 [ApiController]
 [Route("api/[controller]")]
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomMediaTypeNames.Application.JsonV1,
+    CustomMediaTypeNames.Application.HateoasJson,
+    CustomMediaTypeNames.Application.HateoasJsonV1)]
 public sealed class TagsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly UserContext _userContext;
-
-    public TagsController(ApplicationDbContext context, UserContext userContext)
+    private readonly LinkService _linkService;
+    public TagsController(ApplicationDbContext context, UserContext userContext, LinkService linkService)
     {
         _context = context;
         _userContext = userContext;
+        _linkService = linkService;
     }
 
 
     [HttpGet]
-    public async Task<ActionResult<TagsCollectionDto>> GetTags()
+    public async Task<ActionResult<TagsCollectionDto>> GetTags(
+        [FromHeader] AcceptHeaderDto acceptHeader,
+        IOptions<TagsOptions> options)
     {
         var userId = await _userContext.GetUserIdAsync();
         if (string.IsNullOrWhiteSpace(userId))
@@ -40,12 +52,21 @@ public sealed class TagsController : ControllerBase
             .Select(c => c.ToDto())
             .ToListAsync();
 
-        var habitsCollectionDto = new TagsCollectionDto
+        var tagsCollectionDto = new TagsCollectionDto
         {
             Data = tags
         };
 
-        return Ok(habitsCollectionDto);
+        if (acceptHeader.IncludeLinks)
+        {
+            tagsCollectionDto.Links = CreateLinksForTags(tags.Count, options.Value.MaxAllowedTags);
+            foreach (TagDto tagDto in tagsCollectionDto.Data)
+            {
+                tagDto.Links = CreateLinksForTag(tagDto.Id);
+            }
+        }
+
+        return Ok(tagsCollectionDto);
     }
 
     [HttpGet("{id}")]
@@ -152,5 +173,32 @@ public sealed class TagsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private List<LinkDto> CreateLinksForTags(int tagsCount, int maxAllowedTags)
+    {
+        List<LinkDto> links =
+        [
+            _linkService.Create(nameof(GetTags), "self", HttpMethods.Get)
+        ];
+
+        if (tagsCount < maxAllowedTags)
+        {
+            links.Add(_linkService.Create(nameof(CreateTag), "create", HttpMethods.Post));
+        }
+
+        return links;
+    }
+
+    private List<LinkDto> CreateLinksForTag(string id)
+    {
+        List<LinkDto> links =
+        [
+            _linkService.Create(nameof(GetTag), "self", HttpMethods.Get, new { id }),
+            _linkService.Create(nameof(UpdateTag), "update", HttpMethods.Put, new { id }),
+            _linkService.Create(nameof(DeleteTag), "delete", HttpMethods.Delete, new { id })
+        ];
+
+        return links;
     }
 }

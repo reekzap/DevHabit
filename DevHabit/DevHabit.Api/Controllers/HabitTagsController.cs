@@ -19,8 +19,10 @@ public class HabitTagsController : ControllerBase
         _context = context;
     }
 
+    public static readonly string Name = nameof(HabitTagsController).Replace("Controller", string.Empty);
+
     [HttpPut]
-    public async Task<ActionResult> UpsertHabitTag(string habitId, UpsertHabitTagsDto upsertHabitTagsDto)
+    public async Task<ActionResult> UpsertHabitTags(string habitId, UpsertHabitTagsDto upsertHabitTagsDto)
     {
         var habit = await _context.Habits
             .Include(h => h.HabitTags)

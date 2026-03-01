@@ -1,3 +1,4 @@
+using DevHabit.Api.Dtos.Common;
 using Newtonsoft.Json;
 
 namespace DevHabit.Api.Dtos.GitHub;
@@ -10,4 +11,7 @@ public sealed record GitHubUserProfileDto(
     [property: JsonProperty("public_repos")] int PublicRepos,
     [property: JsonProperty("followers")] int Followers,
     [property: JsonProperty("following")] int Following
-);
+) : ILinksResponse
+{
+    public List<LinkDto> Links { get; set; } = [];
+}

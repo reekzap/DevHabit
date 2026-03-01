@@ -1,4 +1,5 @@
-﻿using DevHabit.Api.Dtos.GitHub;
+﻿using DevHabit.Api.Dtos.Common;
+using DevHabit.Api.Dtos.GitHub;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,15 +15,18 @@ public class GitHubController : ControllerBase
     private readonly GitHubAccessTokenService _gitHubAccessTokenService;
     private readonly GitHubService _gitHubApiService;
     private readonly UserContext _userContext;
+    private readonly LinkService _linkService;
 
     public GitHubController(
         GitHubAccessTokenService gitHubAccessTokenService,
         GitHubService gitHubApiService,
-        UserContext userContext)
+        UserContext userContext,
+        LinkService linkService)
     {
         _gitHubAccessTokenService = gitHubAccessTokenService;
         _gitHubApiService = gitHubApiService;
         _userContext = userContext;
+        _linkService = linkService;
     }
 
     [HttpPut("personal-access-token")]
@@ -56,7 +60,7 @@ public class GitHubController : ControllerBase
     }
 
     [HttpGet("profile")]
-    public async Task<ActionResult<GitHubUserProfileDto>> GetGitHubUserProfile()
+    public async Task<ActionResult<GitHubUserProfileDto>> GetUserProfile([FromHeader] AcceptHeaderDto acceptHeader)
     {
         var userId = await _userContext.GetUserIdAsync();
         if (string.IsNullOrWhiteSpace(userId))
@@ -74,6 +78,16 @@ public class GitHubController : ControllerBase
         if (userProfile is null)
         {
             return NotFound("Unable to retrieve GitHub user profile. Please check your access token and try again.");
+        }
+
+        if (acceptHeader.IncludeLinks)
+        {
+            userProfile.Links =
+            [
+                _linkService.Create(nameof(GetUserProfile), "self", HttpMethods.Get),
+                _linkService.Create(nameof(StoreAccessToken), "store-token", HttpMethods.Put),
+                _linkService.Create(nameof(RevokeAccessToken), "revoke-token", HttpMethods.Delete)
+            ];
         }
 
         return Ok(userProfile);
