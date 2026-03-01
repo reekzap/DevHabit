@@ -5,12 +5,13 @@ using DevHabit.Api.Settings;
 var builder = WebApplication.CreateBuilder(args);
 
 builder
-    .AddControllers()
+    .AddApiServices()
     .AddErrorHandling()
     .AddDatabase()
     .AddObservability()
     .AddApplicationServices()
     .AddAuthenticationServices()
+    .AddBackgroundJobs()
     .AddCorsPolicy();
 
 var app = builder.Build();

@@ -425,3 +425,6 @@ dotnet_diagnostic.S6605.severity = none
 dotnet_diagnostic.S6781.severity = none
 
 dotnet_diagnostic.S6964.severity = none
+
+# CA1873: Avoid potentially expensive logging
+dotnet_diagnostic.CA1873.severity = none
