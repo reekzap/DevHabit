@@ -69,7 +69,7 @@ export const EditHabitPage: React.FC = () => {
     if (!id) return;
 
     const selfLink: HypermediaLink = {
-      href: `${import.meta.env.VITE_API_BASE_URL}/habits/${id}`,
+      href: `${import.meta.env.VITE_API_BASE_URL}/api/habits/${id}`,
       rel: 'self',
       method: 'GET',
     };

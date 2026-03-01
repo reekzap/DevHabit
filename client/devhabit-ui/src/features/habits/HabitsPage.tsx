@@ -17,7 +17,10 @@ export const HabitsPage: React.FC = () => {
   }, []);
 
   const loadHabits = async () => {
-    const result = await listHabits({ pageSize: 6 });
+    const result = await listHabits({ 
+      pageSize: 6, 
+      fields: 'id,name,description,frequency,target,endDate,milestone'
+    });
     if (result) {
       setHabits(result.data);
       setCreateLink(result.links.find(l => l.rel === 'create') || null);

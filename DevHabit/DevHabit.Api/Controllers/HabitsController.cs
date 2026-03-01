@@ -1,4 +1,5 @@
-﻿using System.Linq.Dynamic.Core;
+﻿using System.Dynamic;
+using System.Linq.Dynamic.Core;
 using System.Net.Mime;
 using Asp.Versioning;
 using DevHabit.Api.Database;
@@ -32,12 +33,18 @@ public sealed class HabitsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly UserContext _userContext;
     private readonly LinkService _linkService;
+    private readonly DataShapingService _dataShapingService;
 
-    public HabitsController(ApplicationDbContext context, UserContext userContext, LinkService linkService)
+    public HabitsController(
+        ApplicationDbContext context,
+        UserContext userContext,
+        LinkService linkService,
+        DataShapingService dataShapingService)
     {
         _context = context;
         _userContext = userContext;
         _linkService = linkService;
+        _dataShapingService = dataShapingService;
     }
 
     [HttpGet]
@@ -57,6 +64,13 @@ public sealed class HabitsController : ControllerBase
                 detail: $"The provided sort parameter isn't valid: '{query.Sort}'");
         }
 
+        if (!_dataShapingService.Validate<HabitDto>(query.Fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided data shaping fields aren't valid: '{query.Fields}'");
+        }
+
         var sortMappings = sortMappingProvider.GetMappings<HabitDto, Habit>();
 
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
@@ -73,10 +87,23 @@ public sealed class HabitsController : ControllerBase
             .AsQueryable();
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
-        var paginationResult = await PaginationResult<HabitDto>.CreateAsync(
-            habitsQuery,
-            query.Page,
-            query.PageSize);
+        var totalCount = await habitsQuery.CountAsync();
+
+        var habits = await habitsQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        var paginationResult = new PaginationResult<ExpandoObject>
+        {
+            Data = _dataShapingService.ShapeCollectionData(
+                habits,
+                query.Fields,
+                query.IncludeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount
+        };
 
         if (query.IncludeLinks)
         {
