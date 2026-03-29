@@ -84,6 +84,8 @@ export const HabitsPage: React.FC = () => {
           <div className="grid gap-4">
             {habits.map(habit => (
               <Link
+              //   key={habit.links.find(l => l.rel === 'self')?.href}
+              //   to={new URL(habit.links.find(l => l.rel === 'self')?.href ?? '#').pathname.replace('/api', '')}
                 key={habit.id}
                 to={`/habits/${habit.id}`}
                 className="block bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4"

@@ -117,26 +117,44 @@ public sealed class HabitsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<HabitDto>> GetHabit(string id)
+    [MapToApiVersion(1.0)]
+    public async Task<IActionResult> GetHabit(
+        string id,
+        [FromQuery] HabitQueryParameters query,
+        DataShapingService dataShapingService)
     {
-        var userId = await _userContext.GetUserIdAsync();
+        string? userId = await _userContext.GetUserIdAsync();
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
 
+        if (!dataShapingService.Validate<HabitDto>(query.Fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided data shaping fields aren't valid: '{query.Fields}'");
+        }
+
         var habit = await _context.Habits
-            .Where(h => h.Id == id && h.UserId == userId)
-            .Include(h => h.Tags)
-            .Select(h => h.ToDto())
-            .FirstOrDefaultAsync();
+             .Where(h => h.Id == id && h.UserId == userId)
+             .Select(h => h.ToDto())
+             .FirstOrDefaultAsync();
 
         if (habit is null)
         {
             return NotFound();
         }
 
-        return Ok(habit);
+        var shapedHabitDto = dataShapingService.ShapeData(habit, query.Fields);
+
+        if (query.IncludeLinks)
+        {
+            ((IDictionary<string, object?>)shapedHabitDto)[nameof(ILinksResponse.Links)] =
+                CreateLinksForHabit(id, query.Fields);
+        }
+
+        return Ok(shapedHabitDto);
     }
 
     [HttpPost]

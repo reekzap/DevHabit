@@ -98,6 +98,8 @@ public static class HabitMapper
         };
     }
 
+
+
     public static void UpdateFromDto(this Habit habit, UpdateHabitDto dto)
     {
         habit.Name = dto.Name;
